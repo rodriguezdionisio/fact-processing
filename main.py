@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 # 1. CENTRALIZACIÓN DE TAREAS DE HECHOS
 # --------------------------------------------------------------------------------
 FACT_PROCESSING_TASKS = [
-    #{"name": "sales", "processor_func": sales_processor.process, "log_file": "logs/processed_sales_log.txt"},
+    {"name": "sales", "processor_func": sales_processor.process, "log_file": "logs/processed_sales_log.txt"},
     {"name": "sales_orders", "processor_func": sales_orders_processor.process, "log_file": "logs/processed_sales_orders_log.txt"}
 ]
 

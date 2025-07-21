@@ -11,7 +11,7 @@ class Config:
     GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT")
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", os.getenv("GOOGLE_CREDENTIALS_PATH"))
 
-    PROCESSING_BATCH_SIZE = int(os.getenv('PROCESSING_BATCH_SIZE', '50')) # Lee la variable de entorno 'PROCESSING_BATCH_SIZE', si no existe, usa 100
+    PROCESSING_BATCH_SIZE = int(os.getenv('PROCESSING_BATCH_SIZE', '2')) # Lee la variable de entorno 'PROCESSING_BATCH_SIZE', si no existe, usa 100
 config = Config()
 
 print(f"GCP_PROJECT_ID: {config.GCP_PROJECT_ID}")

@@ -9,7 +9,8 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df[(df['attributes.saleState'] != 'IN-COURSE') & (df['attributes.saleState'] != 'PENDING')]
     
     columns_to_delete = [
-        'type', 'attributes.anonymousCustomer_name', 'attributes.expectedPayments',
+        'type', 'attributes.expectedPayments',
+        'attributes_anonymousCustomer', 'attributes_anonymousCustomer_name',
         'relationships.customer.data', 'relationships.items.data',
         'relationships.payments.data', 'relationships.table.data.type',
         'relationships.waiter.data.type', 'relationships.saleIdentifier.data',
@@ -69,6 +70,5 @@ def process(df: pd.DataFrame) -> pd.DataFrame:
     df_with_dates = _process_date(df_clean, 'attributes.createdAt', 'start')
     df_final = _process_date(df_with_dates, 'attributes.closedAt', 'closed')
     
-    # Aquí puedes agregar cualquier otro paso de transformación específico para 'sales'
     
     return df_final
