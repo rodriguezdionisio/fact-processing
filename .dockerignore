@@ -1,0 +1,7 @@
+.venv
+config/
+utils/__pycache__/
+src/processors/__pycache__/
+*.pyc
+*.log
+.git
