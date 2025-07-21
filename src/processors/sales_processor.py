@@ -10,11 +10,13 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     
     columns_to_delete = [
         'type', 'attributes.expectedPayments',
-        'attributes_anonymousCustomer', 'attributes_anonymousCustomer_name',
+        'attributes.customerName',
+        'attributes.anonymousCustomer', 'attributes.anonymousCustomer.name'
         'relationships.customer.data', 'relationships.items.data',
-        'relationships.payments.data', 'relationships.table.data.type',
-        'relationships.waiter.data.type', 'relationships.saleIdentifier.data',
-        'relationships.waiter.data', 'relationships.table.data',
+        'relationships.payments.data', 
+        'relationships.table.data', 'relationships.table.data.type',
+        'relationships.waiter.data', 'relationships.waiter.data.type', 
+        'relationships.saleIdentifier.data', 'relationships.table.data',
         'relationships.customer.data.type', 'attributes.customerName'
     ]
     df = df.drop(columns=columns_to_delete, errors='ignore')
