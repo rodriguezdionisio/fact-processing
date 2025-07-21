@@ -1,0 +1,7 @@
+.venv/
+config/
+.env
+utils/__pycache__/
+src/processors/__pycache__/
+*.pyc
+*.log
