@@ -1,0 +1,22 @@
+steps:
+  # Paso 1: Construir la imagen
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t',
+      'us-east1-docker.pkg.dev/$PROJECT_ID/resto-backend/fact-processing-cloudrun',
+      '.'
+    ]
+
+  # Paso 2: Subir la imagen a Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'us-east1-docker.pkg.dev/$PROJECT_ID/resto-backend/fact-processing-cloudrun'
+    ]
+
+images:
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/resto-backend/fact-processing-cloudrun'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
