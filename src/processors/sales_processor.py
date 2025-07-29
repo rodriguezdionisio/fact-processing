@@ -58,6 +58,32 @@ def _process_date(df: pd.DataFrame, source_column: str, prefix: str) -> pd.DataF
     
     return df
 
+def transform_sale_type(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transforma la columna 'sale_type' de un DataFrame, mapeando los valores
+    de texto a claves numéricas en una nueva columna 'sale_type_key' y
+    eliminando la columna original.
+
+    Args:
+        df (pd.DataFrame): El DataFrame de entrada que debe contener
+                           una columna llamada 'sale_type'.
+
+    Returns:
+        pd.DataFrame: El DataFrame transformado.
+    """
+
+    sale_type_mapping = {
+        'EAT-IN': 1,
+        'TAKEAWAY': 2,
+        'DELIVERY': 3
+    }
+
+    df['sale_type_key'] = df['sale_type'].str.upper().map(sale_type_mapping)
+
+    df = df.drop(columns=['sale_type'])
+
+    return df
+
 def enforce_fact_sales_schema(df: pd.DataFrame) -> pd.DataFrame:
     """
     Aplica el esquema de tipos de datos correcto a un DataFrame de ventas.
@@ -71,13 +97,13 @@ def enforce_fact_sales_schema(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         Un nuevo DataFrame con los tipos de datos corregidos.
     """
-    # Usamos tipos que soportan nulos como 'Int64' (con I mayúscula).
+    # 'Int64' (con I mayúscula) soporta nulos
     schema_types = {
         'sales_key': 'int64',
         'comments': 'string',
         'party_size': 'Int64',
         'total_sale': 'float64',
-        'sale_type': 'string',
+        'sale_type_key': 'Int64',
         'sale_state': 'string',
         'discounts_data': 'string',
         'tips_data': 'string',
@@ -121,6 +147,7 @@ def process(df: pd.DataFrame) -> pd.DataFrame:
     df_clean = _clean_data(df)
     df_with_dates = _process_date(df_clean, 'attributes.createdAt', 'start')
     df_final = _process_date(df_with_dates, 'attributes.closedAt', 'closed')
+    df_final = transform_sale_type(df_final)
     df_final = enforce_fact_sales_schema(df_final)
     
     return df_final

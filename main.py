@@ -29,14 +29,14 @@ def run_fact_processing_task(fact_name: str, process_function, log_path: str):
     
     try:
         raw_folder_prefix = f"raw/fact_{fact_name}/"
-        all_files = gcp_utils.list_gcs_files(prefix=raw_folder_prefix)
+        all_files = gcp_utils.list_gcs_files(config.GCS_BUCKET_NAME, raw_folder_prefix)
         
         processed_files = logs_utils.load_processed_log(log_path, config.GCS_BUCKET_NAME)
         
         files_to_process = [
-            f"gs://{config.GCS_BUCKET_NAME}/{f}" 
+            f"gs://{f}" if not f.startswith('gs://') else f 
             for f in all_files 
-            if f.endswith(".csv") and f"gs://{config.GCS_BUCKET_NAME}/{f}" not in processed_files
+            if f.endswith(".csv") and (f"gs://{f}" if not f.startswith('gs://') else f) not in processed_files
         ]
 
         if not files_to_process:
@@ -48,7 +48,7 @@ def run_fact_processing_task(fact_name: str, process_function, log_path: str):
         batch_size = config.PROCESSING_BATCH_SIZE
         files_for_this_run = files_to_process[:batch_size]
         
-        logger.info(f"Se procesará un lote de hasta {len(files_for_this_run)} archivos (configuración de lote: {batch_size}).")
+        logger.info(f"Se procesará un lote de {len(files_for_this_run)} archivos (configuración de lote: {batch_size}).")
 
         processed_count = 0
         for file_path in files_for_this_run:

@@ -39,50 +39,63 @@ def get_gcsfs():
         return gcsfs.GCSFileSystem(token=config.GOOGLE_APPLICATION_CREDENTIALS)
     return gcsfs.GCSFileSystem()
 
-def list_gcs_files(prefix: str) -> list[str]:
+def list_gcs_files(bucket: str, prefix: str) -> list[str]:
     """
-    Lista todos los nombres de archivo (objetos/blobs) en un bucket de GCS
-    que coinciden con un prefijo.
-
-    Returns:
-        Una lista de rutas de archivo relativas al bucket.
-        Ej: ['raw/fact_sales/date=2025-07-20/sales_1.csv', ...]
-    """
-    try:
-        storage_client = storage.Client()
-        bucket_name = config.GCS_BUCKET_NAME
-        
-        # list_blobs es un iterador sobre los objetos del bucket
-        blobs = storage_client.list_blobs(bucket_name, prefix=prefix)
-        
-        # Extraemos el nombre de cada blob, que es su ruta dentro del bucket.
-        # Excluimos los que terminan en '/', que representan carpetas vacías.
-        file_list = [blob.name for blob in blobs if not blob.name.endswith('/')]
-        
-        return file_list
-    except Exception as e:
-        # Aquí sería bueno usar tu logger en lugar de print
-        print(f"❌ Error crítico al listar archivos de GCS con prefijo '{prefix}': {e}")
-        return []
-    
-def find_latest_dimension_path(dimension_name: str) -> str:
-    """
-    Encuentra la ruta con la fecha más reciente dentro de la carpeta raw de una dimensión.
+    Lista archivos en GCS con un prefijo determinado usando gcsfs.
 
     Args:
+        bucket (str): Nombre del bucket (sin 'gs://').
+        prefix (str): Prefijo de los archivos a listar.
+
+    Returns:
+        list[str]: Lista de rutas de archivos en GCS que coinciden con el prefijo.
+    """
+    fs = get_gcsfs()
+    path = f"gs://{bucket}/{prefix}"
+    try:
+        # Usar recursive=True para obtener todos los archivos, no solo directorios
+        all_items = fs.ls(path, detail=False)
+        
+        # Filtrar solo archivos (no directorios) y obtener los que terminan en .csv
+        files = []
+        for item in all_items:
+            try:
+                # Si es un directorio, listar su contenido recursivamente
+                if not item.endswith('.csv'):
+                    subitems = fs.ls(f"gs://{item}", detail=False)
+                    for subitem in subitems:
+                        if subitem.endswith('.csv'):
+                            files.append(subitem)
+                else:
+                    files.append(item)
+            except Exception:
+                # Si hay error listando un item específico, continuar con el siguiente
+                continue
+        
+        return files
+    except Exception as e:
+        logger.error(f"gcs_utils: Error al listar archivos en {path}: {e}")
+        return []
+    
+def find_latest_dimension_path(layer: str, dimension_name: str) -> str:
+    """
+    Encuentra la ruta con la fecha más reciente dentro de la carpeta de una dimensión y capa ('raw' o 'clean').
+
+    Args:
+        layer (str): Capa de datos ('raw' o 'clean').
         dimension_name (str): Nombre de la dimensión (ej. 'customer').
 
     Returns:
         str: Ruta completa al archivo más reciente.
     """
-    prefix = f"raw/dim_{dimension_name}/"
+    prefix = f"{layer}/dim_{dimension_name}/"
     files = list_gcs_files(config.GCS_BUCKET_NAME, prefix)
 
     # Filtrar solo paths con date partition
     dated_paths = [f for f in files if 'date=' in f]
 
     if not dated_paths:
-        raise FileNotFoundError(f"No se encontraron archivos con particiones de fecha para {dimension_name}")
+        raise FileNotFoundError(f"No se encontraron archivos con particiones de fecha para {dimension_name} en la capa {layer}")
 
     # Extraer fecha y comparar
     def extract_date(path):
@@ -113,6 +126,26 @@ def read_csv_from_gcs(path: str) -> pd.DataFrame:
             return df
     except Exception as e:
         logger.error(f"Error al leer CSV desde GCS: {path} - {e}", exc_info=True)
+        return pd.DataFrame()
+
+def read_parquet_from_gcs(path: str) -> pd.DataFrame:
+    """
+    Lee un archivo Parquet desde una ruta completa de GCS y devuelve un DataFrame.
+
+    Args:
+        path (str): Ruta GCS completa (ej. 'gs://bucket/raw/dim_customer/date=2024-06-01/data.parquet').
+
+    Returns:
+        pd.DataFrame: DataFrame con los datos del archivo.
+    """
+    fs = get_gcsfs()
+    try:
+        with fs.open(path, 'rb') as f:
+            df = pd.read_parquet(f)
+            logger.info(f"Parquet leído exitosamente desde {path} con {len(df)} registros.")
+            return df
+    except Exception as e:
+        logger.error(f"Error al leer Parquet desde GCS: {path} - {e}", exc_info=True)
         return pd.DataFrame()
 
 def write_parquet_to_gcs(df: pd.DataFrame, destination_path: str):
